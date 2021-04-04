@@ -10,10 +10,12 @@ var ctx            = canvas.getContext('2d');
 var mini_ctx       = mini_canvas.getContext('2d');
 var ai_ctx         = ai_canvas.getContext('2d');
 
+
+
 var clock_model = null;
 videoSelect.onchange = getStream;
 
-function extractTimeFromImagee() {
+function extractTimeFromImage() {
 
     tf.engine().startScope(); // Ensure tensors are disposed of ( memory leak prevention)
 
@@ -128,8 +130,11 @@ function extractTimeFromImagee() {
     ctx.stroke();
 
     ctx.font = "50px Arial";
-    text = " Time:- " + (ch.toString()).padStart(2, '0') + ":" + (lm.toString()).padStart(2, '0');
+    var text = " Time:- " + (ch.toString()).padStart(2, '0') + ":" + (lm.toString()).padStart(2, '0');
     ctx.fillText( text,200, 40);
+    //
+    var timeElement    = document.getElementById("time");
+    timeElement.innerHTML = text;
 
     tf.engine().endScope(); // Prevent memory leak
 
