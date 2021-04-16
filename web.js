@@ -25,8 +25,8 @@ function extractTimeFromImage() {
     canvas.width  = webcamElement.videoWidth;
     canvas.height = webcamElement.videoHeight;
 
-    var capture_width = 180;
-    var capture_height = 180;
+    var capture_width = 144;
+    var capture_height = 144;
     var pX=canvas.width/2  - capture_width/2;
     var pY=canvas.height/2 - capture_height/2;
 
@@ -113,22 +113,22 @@ function extractTimeFromImage() {
 
     ctx.beginPath();
     ctx.moveTo(pX+capture_width/2, pY+capture_height/2);
-    ctx.lineTo(pX+capture_width/2 + 100, pY+capture_height/2);
+    ctx.lineTo(pX+capture_width/2 + mini_canvas.width/2, pY+capture_height/2);
     ctx.stroke();
 
     ctx.beginPath();
     ctx.moveTo(pX+capture_width/2, pY+capture_height/2);
-    ctx.lineTo(pX+capture_width/2 - 100, pY+capture_height/2);
+    ctx.lineTo(pX+capture_width/2 - mini_canvas.width/2, pY+capture_height/2);
     ctx.stroke();
 
     ctx.beginPath();
     ctx.moveTo(pX+capture_width/2, pY+capture_height/2);
-    ctx.lineTo(pX+capture_width/2, pY+capture_height/2 + 100);
+    ctx.lineTo(pX+capture_width/2, pY+capture_height/2 +   mini_canvas.width/2);
     ctx.stroke();
 
     ctx.beginPath();
     ctx.moveTo(pX+capture_width/2, pY+capture_height/2);
-    ctx.lineTo(pX+capture_width/2, pY+capture_height/2 - 100);
+    ctx.lineTo(pX+capture_width/2, pY+capture_height/2 -   mini_canvas.width/2);
     ctx.stroke();
 
     ctx.font = "50px Arial";
