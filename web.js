@@ -31,8 +31,8 @@ function extractTimeFromImage() {
     var pY=canvas.height/2 - capture_height/2;
 
     ctx.drawImage(webcamElement, 0, 0, canvas.width, canvas.height );
-    mini_canvas.width  = 180;
-    mini_canvas.height = 180;
+    mini_canvas.width  = 144;
+    mini_canvas.height = 144;
     mini_ctx.drawImage(canvas,  pX, pY, capture_width, capture_height, 0, 0, capture_width, capture_height  );
 
     var image = tf.browser.fromPixels( mini_canvas, 3 ).toFloat() //mean(2)//.toFloat()
