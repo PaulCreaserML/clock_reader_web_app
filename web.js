@@ -10,6 +10,9 @@ var ctx            = canvas.getContext('2d');
 var mini_ctx       = mini_canvas.getContext('2d');
 var ai_ctx         = ai_canvas.getContext('2d');
 
+var pred_hours = 0;
+var pred_minutes = 0;
+
 
 
 var clock_model = null;
@@ -22,19 +25,21 @@ function extractTimeFromImage() {
     canvas.width  = webcamElement.videoWidth;
     canvas.height = webcamElement.videoHeight;
 
-    var capture_width = 200;
-    var capture_height = 200;
+    var capture_width = 180;
+    var capture_height = 180;
     var pX=canvas.width/2  - capture_width/2;
     var pY=canvas.height/2 - capture_height/2;
 
     ctx.drawImage(webcamElement, 0, 0, canvas.width, canvas.height );
-    mini_canvas.width  = 200;
-    mini_canvas.height = 200;
+    mini_canvas.width  = 180;
+    mini_canvas.height = 180;
     mini_ctx.drawImage(canvas,  pX, pY, capture_width, capture_height, 0, 0, capture_width, capture_height  );
 
     var image = tf.browser.fromPixels( mini_canvas, 3 ).toFloat() //mean(2)//.toFloat()
 
-    image = image.resizeBilinear([100, 100])
+    input_height = 144
+    input_width  = 144
+    image = image.resizeBilinear([input_width, input_height])
 
     image = image.mean(2)
 
@@ -42,61 +47,58 @@ function extractTimeFromImage() {
     ai_canvas.height = capture_width;
 
     image = image.div(255.0)
-    image = tf.stack( [ image, image, image ], 2)
+    //image = tf.stack( [ image, image, image ], 2)
 
     if ( clock_model != null ) {
       image =image.expandDims(0);
+      image =image.expandDims(3);
 
-      result = clock_model.predict( image, { batch_size:1});// .print()
+      result = clock_model.predict( image, { batch_size:1});
       result = result.dataSync();
 
-      var asin = result[0]*1.001;
+      ha  =  Math.atan2(  ( result[0]*1.01), ( result[1]*1.01) );
+      ma  =  Math.atan2(  ( result[2]*1.01), ( result[3]*1.01) );
 
-      if (asin >  1.0 ) asin=  1.0;
-      if (asin < -1.0 ) asin= -1.0;
+      ha  = ha*180;
+      ma  = ma*180;
 
-      var acos = result[1]*1.001;
+      ha  = ha/Math.PI;
+      ma  = ma/Math.PI;
 
-      if (acos >  1.0 ) acos=  1.0;
-      if (acos < -1.0 ) acos= -1.0;
-
-      var atanH  =  Math.atan2( asin, acos ) * 180/Math.PI;
-
-      var lh = atanH/30;
-      lh =  Math.round(lh);
-      if ( lh < 0 ) {
-          lh= lh + 12;
+      if ( ha < 0 ) {
+          ha = ha + 360;
       }
 
-      asin =  result[2]*1.001;
-      if (asin >  1.0 ) asin=  1.0;
-      if (asin < -1.0 ) asin= -1.0;
-      acos = result[3]*1.001;
-      if (acos >  1.0 ) acos=  1.0;
-      if (acos < -1.0 ) acos= -1.0;
-      atanM  =  Math.atan2( asin, acos ) * 180/Math.PI
-
-      var lm = atanM/6;
-      lm =  Math.round(lm);
-      if ( lm < 0 ) {
-          lm= lm + 60;
+      if ( ma < 0 ) {
+          ma = ma + 360;
       }
 
-      asin =  result[4]*1.001;
-      if (asin >  1.0 ) asin=  1.0;
-      if (asin < -1.0 ) asin= -1.0;
-      acos = result[5]*1.001
-      if (acos >  1.0 ) acos=  1.0;
-      if (acos < -1.0 ) acos= -1.0;
+      new_pred_hours   = Math.floor(ha/30)
+      new_pred_minutes = Math.floor( ( ha - ( new_pred_hours*30) )/2 )
 
-      atanH2  =  Math.atan2( asin, acos ) * 180/Math.PI;
+      console.log(  ha/30, new_pred_hours, new_pred_minutes  )
 
-      var ch = atanH2;
-      ch = ch/30;
-      ch =  Math.round(ch);
-      if ( ch < 0 ) {
-         ch= ch + 12;
-       }
+      new_pred_minutes_approx = Math.floor(ma/6);
+
+      console.log( new_pred_hours, new_pred_minutes_approx );
+
+
+      if ( ( new_pred_minutes_approx > 56 ) && ( new_pred_minutes > 56) ) {
+          new_pred_minutes = new_pred_minutes_approx;
+      }
+      else if ( ( new_pred_minutes_approx < 4) && ( new_pred_minutes < 4 ) ) {
+          new_pred_minutes = new_pred_minutes_approx;
+      }
+      else if (  ( new_pred_minutes_approx > 3 && new_pred_minutes_approx < 57) && ( new_pred_minutes > 3 && new_pred_minutes < 57) ) {
+          new_pred_minutes = new_pred_minutes_approx;
+      }
+      else if (  new_pred_minutes > 0 && new_pred_minutes <  30 && new_pred_minutes_approx > 50 ) {
+          new_pred_minutes = new_pred_minutes_approx;
+      }
+
+      pred_hours   = new_pred_hours;
+      pred_minutes = new_pred_minutes;
+
     } else {
       console.log("No result")
     }
@@ -130,7 +132,7 @@ function extractTimeFromImage() {
     ctx.stroke();
 
     ctx.font = "50px Arial";
-    var text = " Time:- " + (ch.toString()).padStart(2, '0') + ":" + (lm.toString()).padStart(2, '0');
+    var text = " Time:- " + (  pred_hours.toString()).padStart(2, '0') + ":" + (  pred_minutes.toString()).padStart(2, '0');
     ctx.fillText( text,200, 40);
     //
     var timeElement    = document.getElementById("time");
@@ -193,7 +195,9 @@ async function app() {
   // Get video stream
   getStream().then(getDevices).then(gotDevices);
   // Load model
-  tf.loadGraphModel('robust_model2/json/model.json').then(function(model) {
+  // tf.loadGraphModel('robust_model2/json/model.json').then(function(model) {
+  //tf.loadGraphModel('test/model.json').then(function(model) {
+  tf.loadGraphModel('raw/model.json').then(function(model) {
     clock_model = model;
   });
 
